@@ -77,7 +77,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Start position not found")
     ),
     MapData(
       map = Array(
@@ -87,7 +87,7 @@ class MapExamples {
         Array(' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Multiple or no endings found")
     ),
     MapData(
       map = Array(
@@ -97,7 +97,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Multiple start positions found")
     ),
     MapData(
       map = Array(
@@ -107,7 +107,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', ' ', ' ', ' ', 'x'),
         Array(' ', ' ', ' ', '@', '-', 'B', '-', '+')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Multiple start positions found")
     ),
     MapData(
       map = Array(
@@ -116,7 +116,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', '@')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Multiple or no endings found")
     ),
     MapData(
       map = Array(
@@ -128,7 +128,7 @@ class MapExamples {
         Array(' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Multiple or no endings found")
     ),
     MapData(
       map = Array(
@@ -137,19 +137,19 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', ' ', ' '),
         Array(' ', ' ', ' ', ' ', ' ', 'B', '-', 'x')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Broken path")
     ),
     MapData(
       map = Array(
         Array('x', '-', 'B', '-', '@', '-', 'A', '-', 'x')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Multiple or no endings found")
     ),
     MapData(
       map = Array(
         Array('@', '-', 'A', '-', '+', '-', 'B', '-', 'x')
       ),
-      expectedResult = Left("Error")
+      expectedResult = Left("Error: Fake turn encountered")
     )
   )
 }
