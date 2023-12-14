@@ -2,139 +2,149 @@ import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
 object Main {
+  def main(args: Array[String]): Unit = {
+    val examples = new MapExamples()
+
+    println("Testing valid examples:")
+    examples.validExamples.foreach(testMap)
+
+    println("\nTesting invalid examples:")
+    examples.invalidExamples.foreach(testMap)
+  }
+
+  private def testMap(example: MapData): Unit = {
+    val result = navigateMap(example.map)
+    val testPassed = result == example.expectedResult
+    println(s"Test passed: $testPassed - Result: $result, Expected: ${example.expectedResult}")
+  }
+
   private def navigateMap(map: Array[Array[Char]]): Either[String, MapResult] = {
-    // Pre-scan for multiple endings
-    val endingCount = map.flatten.count(_ == 'x')
-    if (endingCount != 1) {
-      return Left("Error: Multiple or no endings found")
-    }
-
-    findStartPosition(map) match {
-      case Left(errorMessage) => Left(errorMessage)
-      case Right((startRow, startCol)) =>
-        val initialDirectionResult = initialDirection(startRow, startCol, map)
-
-        initialDirectionResult match {
-          case Left(errorMessage) => Left(errorMessage)
-          case Right((dr, dc)) =>
-            var rowDelta = dr
-            var colDelta = dc
-            // Initialize a 2D array to track visited positions for a jagged matrix
-            val visited = map.map(row => Array.fill[(Boolean, String)](row.length)((false, "")))
-
-            if (rowDelta == 0 && colDelta == 0) {
-              return Left("Error: No valid initial direction found from start position")
-            }
-
-            var (row, col) = (startRow, startCol)
-            val path = new StringBuilder
-            val letters = new StringBuilder
-            val collectedLettersPositions = mutable.Set[(Int, Int)]()
-            var finished = false
-
-            while (!finished) {
-              val currentChar = map(row)(col)
-
-              if (currentChar != ' ') {
-                path.append(currentChar)
-
-                // Check if the current position has been visited before collecting the letter
-                if (currentChar.isLetter && currentChar != 'x' && !collectedLettersPositions.contains((row, col))) {
-                  letters.append(currentChar)
-                  collectedLettersPositions.add((row, col))
-                }
-
-                currentChar match {
-                  case '@' =>
-                  case _ if currentChar.isLetter || currentChar == '+' =>
-                    // Determine the new direction based on the surrounding characters
-                    val currentDirection = (rowDelta, colDelta)
-                    val alternativeDirections = Seq(
-                      (-1, 0), (1, 0), (0, -1), (0, 1)
-                    ).filterNot(_ == currentDirection)
-
-                    val possibleDirections = (currentDirection +: alternativeDirections).map {
-                      case (dr, dc) => (dr, dc) -> (() => {
-                        val newRow = row + dr
-                        val newCol = col + dc
-                        newRow >= 0 && newRow < map.length && newCol >= 0 && newCol < map(newRow).length &&
-                          !visited(newRow)(newCol)._1 &&
-                          ((dr, dc) match {
-                            case (-1, 0) | (1, 0) => map(newRow)(newCol) == '|' || map(newRow)(newCol).isLetter
-                            case (0, -1) | (0, 1) => map(newRow)(newCol) == '-' || map(newRow)(newCol).isLetter
-                            case _ => false
-                          })
-                      })
-                    }
-
-                    possibleDirections.find { case ((dr, dc), condition) =>
-                      condition()
-                    }.foreach { case ((dr, dc), _) =>
-                      rowDelta = dr
-                      colDelta = dc
-                    }
-
-                    if (currentChar == '+' && currentDirection == (rowDelta, colDelta)) {
-                      return Left("Error: Fake turn encountered")
-                    }
-                  case '-' =>
-                    // Continue in the same direction for '-'
-                    if (rowDelta == 0) {
-                      // Only update colDelta if it's not already set (by '+')
-                      colDelta = if (colDelta == 0) 1 else colDelta
-                    }
-                  case '|' =>
-                    // Continue in the same direction for '|'
-                    if (colDelta == 0) {
-                      // Only update rowDelta if it's not already set (by '+')
-                      rowDelta = if (rowDelta == 0) 1 else rowDelta
-                    }
-                  case _ if currentChar.isLetter =>
-                  // Continue in the same direction for letters
-                  case _ =>
-                    return Left(s"Error: Invalid character on the path: ${currentChar}")
-                }
-              } else {
-                return Left("Error: Broken path")
-              }
-
-              // Check for the end
-              if (currentChar == 'x') {
-                finished = true
-              } else {
-                // Update position
-                val newRow = row + rowDelta
-                val newCol = col + colDelta
-
-                if (newRow >= 0 && newRow < map.length && newCol >= 0 && newCol < map(newRow).length) {
-                  val currentDirection = if (rowDelta != 0) "vertical" else "horizontal"
-                  val (visitedBefore, lastDirection) = visited(newRow)(newCol)
-
-                  if (!visitedBefore || lastDirection != currentDirection) {
-                    row = newRow
-                    col = newCol
-                    // Mark as visited with the current direction
-                    visited(row)(col) = (true, currentDirection)
-                  } else {
-                    return Left("Error: Path revisits a position or goes off the map")
-                  }
-                } else {
-                  return Left("Error: Path goes off the map")
-                }
-              }
-
-              // Check boundaries
-              if (row < 0 || row >= map.length || col < 0 || col >= map(row).length) {
-                return Left("Error: Path goes off the map")
-              }
-            }
-
-            if (map(row)(col) != 'x') {
-              return Left("Error: Path does not end with 'x'")
-            }
-
-            Right(MapResult(letters.toString, path.toString))
+    validateMap(map) match {
+      case Left(error) => Left(error)
+      case Right(_) =>
+        findStartPosition(map) match {
+          case Left(error) => Left(error)
+          case Right((startRow, startCol)) =>
+            performNavigation(startRow, startCol, map)
         }
+    }
+  }
+
+  private def validateMap(map: Array[Array[Char]]): Either[String, Unit] = {
+    val startingPositions = map.flatten.count(_ == '@')
+    val endingPositions = map.flatten.count(_ == 'x')
+
+    (startingPositions, endingPositions) match {
+      case (1, 1) => Right(()) // Valid map with one starting and one ending position
+      case (0, _) => Left("Error: No starting position '@' found on the map")
+      case (_, 0) => Left("Error: No ending position 'x' found on the map")
+      case (1, _) => Left("Error: Multiple ending positions 'x' found on the map")
+      case (_, 1) => Left("Error: Multiple starting positions '@' found on the map")
+      case _ => Left("Error: Multiple starting positions '@' and multiple ending positions 'x' found on the map")
+    }
+  }
+
+  private def performNavigation(startRow: Int, startCol: Int, map: Array[Array[Char]]): Either[String, MapResult] = {
+    val initialDirectionResult = initialDirection(startRow, startCol, map)
+
+    initialDirectionResult match {
+      case Left(errorMessage) => Left(errorMessage)
+      case Right((dr, dc)) =>
+        var rowDelta = dr
+        var colDelta = dc
+        // Initialize a 2D array to track visited positions for a jagged matrix
+        val visited = map.map(row => Array.fill[(Boolean, String)](row.length)((false, "")))
+
+        if (rowDelta == 0 && colDelta == 0) {
+          return Left("Error: No valid initial direction found from start position")
+        }
+
+        var (row, col) = (startRow, startCol)
+        val path = new StringBuilder
+        val letters = new StringBuilder
+        val collectedLettersPositions = mutable.Set[(Int, Int)]()
+        var finished = false
+
+        while (!finished) {
+          val currentChar = map(row)(col)
+
+          if (currentChar != ' ') {
+            path.append(currentChar)
+
+            // Check if the current position has been visited before collecting the letter
+            if (currentChar.isLetter && currentChar != 'x' && !collectedLettersPositions.contains((row, col))) {
+              letters.append(currentChar)
+              collectedLettersPositions.add((row, col))
+            }
+
+            currentChar match {
+              case '@' =>
+              case _ if currentChar.isLetter || currentChar == '+' =>
+                val (newRowDelta, newColDelta) = determineNewDirection(map, visited, row, col, rowDelta, colDelta)
+
+                if (currentChar == '+' && (newRowDelta, newColDelta) == (rowDelta, colDelta)) {
+                  return Left("Error: Fake turn encountered")
+                } else {
+                  rowDelta = newRowDelta
+                  colDelta = newColDelta
+                }
+              case '-' =>
+                // Continue in the same direction for '-'
+                if (rowDelta == 0) {
+                  // Only update colDelta if it's not already set (by '+')
+                  colDelta = if (colDelta == 0) 1 else colDelta
+                }
+              case '|' =>
+                // Continue in the same direction for '|'
+                if (colDelta == 0) {
+                  // Only update rowDelta if it's not already set (by '+')
+                  rowDelta = if (rowDelta == 0) 1 else rowDelta
+                }
+              case _ if currentChar.isLetter =>
+              // Continue in the same direction for letters
+              case _ =>
+                return Left(s"Error: Invalid character '$currentChar' on the path at position ($row, $col)")
+            }
+          } else {
+            return Left("Error: Broken path")
+          }
+
+          // Check for the end
+          if (currentChar == 'x') {
+            finished = true
+          } else {
+            // Update position
+            val newRow = row + rowDelta
+            val newCol = col + colDelta
+
+            if (newRow >= 0 && newRow < map.length && newCol >= 0 && newCol < map(newRow).length) {
+              val currentDirection = if (rowDelta != 0) "vertical" else "horizontal"
+              val (visitedBefore, lastDirection) = visited(newRow)(newCol)
+
+              if (!visitedBefore || lastDirection != currentDirection) {
+                row = newRow
+                col = newCol
+                // Mark as visited with the current direction
+                visited(row)(col) = (true, currentDirection)
+              } else {
+                return Left("Error: Path revisits a position or goes off the map")
+              }
+            } else {
+              return Left("Error: Path goes off the map")
+            }
+          }
+
+          // Check boundaries
+          if (row < 0 || row >= map.length || col < 0 || col >= map(row).length) {
+            return Left("Error: Path goes off the map")
+          }
+        }
+
+        if (map(row)(col) != 'x') {
+          return Left("Error: Path does not end with 'x'")
+        }
+
+        Right(MapResult(letters.toString, path.toString))
     }
   }
 
@@ -183,21 +193,53 @@ object Main {
     }
   }
 
-  def main(args: Array[String]): Unit = {
-    val examples = new MapExamples()
+  private def determineNewDirection(
+    map: Array[Array[Char]],
+    visited: Array[Array[(Boolean, String)]],
+    row: Int,
+    col: Int,
+    rowDelta: Int,
+    colDelta: Int
+  ): (Int, Int) = {
+    val currentDirection = (rowDelta, colDelta)
+    val alternativeDirections = Seq(
+      (-1, 0), (1, 0), (0, -1), (0, 1)
+    ).filterNot(_ == currentDirection)
 
-    println("Testing valid examples:")
-    examples.validExamples.foreach { example =>
-      val result = navigateMap(example.map)
-      val testPassed = result == example.expectedResult
-      println(s"Test passed: $testPassed - Result: $result, Expected: ${example.expectedResult}")
+    val possibleDirections = (currentDirection +: alternativeDirections).map {
+      case (dr, dc) => (dr, dc) -> (() => {
+        val newRow = row + dr
+        val newCol = col + dc
+        isUnvisited(newRow, newCol, visited) &&
+          isValidDirection(map, newRow, newCol, dr, dc)
+      })
     }
 
-    println("\nTesting invalid examples:")
-    examples.invalidExamples.foreach { example =>
-      val result = navigateMap(example.map)
-      val testPassed = result == example.expectedResult
-      println(s"Test passed: $testPassed - Result: $result, Expected: ${example.expectedResult}")
-    }
+    possibleDirections.find { case ((dr, dc), condition) =>
+        condition()
+      }.map { case ((dr, dc), _) => (dr, dc) }
+      .getOrElse(currentDirection)
+  }
+
+  private def isValidDirection(
+    map: Array[Array[Char]],
+    newRow: Int,
+    newCol: Int,
+    rowDelta: Int,
+    colDelta: Int
+  ): Boolean = {
+    ((rowDelta, colDelta) match {
+      case (-1, 0) | (1, 0) => map(newRow)(newCol) == '|' || map(newRow)(newCol).isLetter
+      case (0, -1) | (0, 1) => map(newRow)(newCol) == '-' || map(newRow)(newCol).isLetter
+      case _ => false
+    })
+  }
+
+  private def isUnvisited(
+    newRow: Int,
+    newCol: Int,
+    visited: Array[Array[(Boolean, String)]]
+  ): Boolean = {
+    newRow >= 0 && newRow < visited.length && newCol >= 0 && newCol < visited(newRow).length && !visited(newRow)(newCol)._1
   }
 }

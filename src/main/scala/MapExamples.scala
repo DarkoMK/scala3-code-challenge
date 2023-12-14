@@ -77,7 +77,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error: Start position not found")
+      expectedResult = Left("Error: No starting position '@' found on the map")
     ),
     MapData(
       map = Array(
@@ -87,7 +87,7 @@ class MapExamples {
         Array(' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error: Multiple or no endings found")
+      expectedResult = Left("Error: No ending position 'x' found on the map")
     ),
     MapData(
       map = Array(
@@ -97,7 +97,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error: Multiple start positions found")
+      expectedResult = Left("Error: Multiple starting positions '@' found on the map")
     ),
     MapData(
       map = Array(
@@ -107,7 +107,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', ' ', ' ', ' ', 'x'),
         Array(' ', ' ', ' ', '@', '-', 'B', '-', '+')
       ),
-      expectedResult = Left("Error: Multiple start positions found")
+      expectedResult = Left("Error: Multiple starting positions '@' found on the map")
     ),
     MapData(
       map = Array(
@@ -116,7 +116,7 @@ class MapExamples {
         Array(' ', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', '@')
       ),
-      expectedResult = Left("Error: Multiple or no endings found")
+      expectedResult = Left("Error: Multiple starting positions '@' and multiple ending positions 'x' found on the map")
     ),
     MapData(
       map = Array(
@@ -128,7 +128,7 @@ class MapExamples {
         Array(' ', ' ', ' ', '|', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', '+', '-', '-', '-', '+')
       ),
-      expectedResult = Left("Error: Multiple or no endings found")
+      expectedResult = Left("Error: Multiple ending positions 'x' found on the map")
     ),
     MapData(
       map = Array(
@@ -143,7 +143,7 @@ class MapExamples {
       map = Array(
         Array('x', '-', 'B', '-', '@', '-', 'A', '-', 'x')
       ),
-      expectedResult = Left("Error: Multiple or no endings found")
+      expectedResult = Left("Error: Multiple ending positions 'x' found on the map")
     ),
     MapData(
       map = Array(
