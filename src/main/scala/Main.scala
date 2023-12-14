@@ -71,67 +71,39 @@ object Main {
           if (currentChar != ' ') {
             path.append(currentChar)
 
-            // Check if the current position has been visited before collecting the letter
             if (currentChar.isLetter && currentChar != 'x' && !collectedLettersPositions.contains((row, col))) {
               letters.append(currentChar)
               collectedLettersPositions.add((row, col))
             }
 
-            currentChar match {
-              case '@' =>
-              case _ if currentChar.isLetter || currentChar == '+' =>
-                val (newRowDelta, newColDelta) = determineNewDirection(map, visited, row, col, rowDelta, colDelta)
+            processCurrentCharacter(currentChar, row, col, rowDelta, colDelta, map, visited) match {
+              case Right((newRowDelta, newColDelta)) =>
+                rowDelta = newRowDelta
+                colDelta = newColDelta
 
-                if (currentChar == '+' && (newRowDelta, newColDelta) == (rowDelta, colDelta)) {
-                  return Left("Error: Fake turn encountered")
+                if (currentChar == 'x') {
+                  finished = true
                 } else {
-                  rowDelta = newRowDelta
-                  colDelta = newColDelta
+                  updatePosition(row, col, rowDelta, colDelta, map) match {
+                    case Right((newRow, newCol)) =>
+                      val currentDirection = if (rowDelta != 0) "vertical" else "horizontal"
+
+                      markAsVisited(newRow, newCol, visited, currentDirection) match {
+                        case Right(_) =>
+                          row = newRow
+                          col = newCol
+                        case Left(errorMessage) =>
+                          return Left(errorMessage)
+                      }
+                    case Left(errorMessage) =>
+                      return Left(errorMessage)
+                  }
                 }
-              case '-' =>
-                // Continue in the same direction for '-'
-                if (rowDelta == 0) {
-                  // Only update colDelta if it's not already set (by '+')
-                  colDelta = if (colDelta == 0) 1 else colDelta
-                }
-              case '|' =>
-                // Continue in the same direction for '|'
-                if (colDelta == 0) {
-                  // Only update rowDelta if it's not already set (by '+')
-                  rowDelta = if (rowDelta == 0) 1 else rowDelta
-                }
-              case _ if currentChar.isLetter =>
-              // Continue in the same direction for letters
-              case _ =>
-                return Left(s"Error: Invalid character '$currentChar' on the path at position ($row, $col)")
+              case Left(errorMessage) =>
+                return Left(errorMessage)
             }
           } else {
             return Left("Error: Broken path")
-          }
-
-          // Check for the end
-          if (currentChar == 'x') {
-            finished = true
-          } else {
-            // Update position
-            val newRow = row + rowDelta
-            val newCol = col + colDelta
-
-            if (newRow >= 0 && newRow < map.length && newCol >= 0 && newCol < map(newRow).length) {
-              val currentDirection = if (rowDelta != 0) "vertical" else "horizontal"
-              val (visitedBefore, lastDirection) = visited(newRow)(newCol)
-
-              if (!visitedBefore || lastDirection != currentDirection) {
-                row = newRow
-                col = newCol
-                // Mark as visited with the current direction
-                visited(row)(col) = (true, currentDirection)
-              } else {
-                return Left("Error: Path revisits a position or goes off the map")
-              }
-            } else {
-              return Left("Error: Path goes off the map")
-            }
           }
 
           // Check boundaries
@@ -145,6 +117,44 @@ object Main {
         }
 
         Right(MapResult(letters.toString, path.toString))
+    }
+  }
+
+  private def processCurrentCharacter(currentChar: Char, row: Int, col: Int, rowDelta: Int, colDelta: Int, map: Array[Array[Char]], visited: Array[Array[(Boolean, String)]]): Either[String, (Int, Int)] = {
+    currentChar match {
+      case '@' => Right((rowDelta, colDelta))
+      case _ if currentChar.isLetter || currentChar == '+' =>
+        val (newRowDelta, newColDelta) = determineNewDirection(map, visited, row, col, rowDelta, colDelta)
+        if (currentChar == '+' && (newRowDelta, newColDelta) == (rowDelta, colDelta)) {
+          Left("Error: Fake turn encountered")
+        } else {
+          Right((newRowDelta, newColDelta))
+        }
+      case '-' if rowDelta == 0 => Right((rowDelta, if (colDelta == 0) 1 else colDelta))
+      case '|' if colDelta == 0 => Right((if (rowDelta == 0) 1 else rowDelta, colDelta))
+      case _ => Right((rowDelta, colDelta))
+    }
+  }
+
+  private def updatePosition(row: Int, col: Int, rowDelta: Int, colDelta: Int, map: Array[Array[Char]]): Either[String, (Int, Int)] = {
+    val newRow = row + rowDelta
+    val newCol = col + colDelta
+
+    if (newRow >= 0 && newRow < map.length && newCol >= 0 && newCol < map(newRow).length) {
+      Right((newRow, newCol))
+    } else {
+      Left("Error: Path goes off the map")
+    }
+  }
+
+  private def markAsVisited(row: Int, col: Int, visited: Array[Array[(Boolean, String)]], currentDirection: String): Either[String, Unit] = {
+    val (visitedBefore, lastDirection) = visited(row)(col)
+
+    if (!visitedBefore || lastDirection != currentDirection) {
+      visited(row)(col) = (true, currentDirection)
+      Right(())
+    } else {
+      Left("Error: Path revisits a position or goes off the map")
     }
   }
 
