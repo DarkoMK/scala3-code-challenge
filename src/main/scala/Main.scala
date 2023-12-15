@@ -18,7 +18,7 @@ object Main {
     println(s"Test passed: $testPassed - Result: $result, Expected: ${example.expectedResult}")
   }
 
-  private def navigateMap(map: Array[Array[Char]]): Either[String, MapResult] = {
+  def navigateMap(map: Array[Array[Char]]): Either[String, MapResult] = {
     validateMap(map) match {
       case Left(error) => Left(error)
       case Right(_) =>
@@ -30,7 +30,7 @@ object Main {
     }
   }
 
-  private def validateMap(map: Array[Array[Char]]): Either[String, Unit] = {
+  def validateMap(map: Array[Array[Char]]): Either[String, Unit] = {
     val startingPositions = map.flatten.count(_ == '@')
     val endingPositions = map.flatten.count(_ == 'x')
 
@@ -44,7 +44,7 @@ object Main {
     }
   }
 
-  private def performNavigation(startRow: Int, startCol: Int, map: Array[Array[Char]]): Either[String, MapResult] = {
+  def performNavigation(startRow: Int, startCol: Int, map: Array[Array[Char]]): Either[String, MapResult] = {
     val initialDirectionResult = initialDirection(startRow, startCol, map)
 
     initialDirectionResult match {
@@ -120,7 +120,7 @@ object Main {
     }
   }
 
-  private def processCurrentCharacter(currentChar: Char, row: Int, col: Int, rowDelta: Int, colDelta: Int, map: Array[Array[Char]], visited: Array[Array[(Boolean, String)]]): Either[String, (Int, Int)] = {
+  def processCurrentCharacter(currentChar: Char, row: Int, col: Int, rowDelta: Int, colDelta: Int, map: Array[Array[Char]], visited: Array[Array[(Boolean, String)]]): Either[String, (Int, Int)] = {
     currentChar match {
       case '@' => Right((rowDelta, colDelta))
       case _ if currentChar.isLetter || currentChar == '+' =>
@@ -136,7 +136,7 @@ object Main {
     }
   }
 
-  private def updatePosition(row: Int, col: Int, rowDelta: Int, colDelta: Int, map: Array[Array[Char]]): Either[String, (Int, Int)] = {
+  def updatePosition(row: Int, col: Int, rowDelta: Int, colDelta: Int, map: Array[Array[Char]]): Either[String, (Int, Int)] = {
     val newRow = row + rowDelta
     val newCol = col + colDelta
 
@@ -147,7 +147,7 @@ object Main {
     }
   }
 
-  private def markAsVisited(row: Int, col: Int, visited: Array[Array[(Boolean, String)]], currentDirection: String): Either[String, Unit] = {
+  def markAsVisited(row: Int, col: Int, visited: Array[Array[(Boolean, String)]], currentDirection: String): Either[String, Unit] = {
     val (visitedBefore, lastDirection) = visited(row)(col)
 
     if (!visitedBefore || lastDirection != currentDirection) {
@@ -158,7 +158,7 @@ object Main {
     }
   }
 
-  private def findStartPosition(map: Array[Array[Char]]): Either[String, (Int, Int)] = {
+  def findStartPosition(map: Array[Array[Char]]): Either[String, (Int, Int)] = {
     var startPosition: Option[(Int, Int)] = None
     var multipleStartsFound = false
 
@@ -184,7 +184,7 @@ object Main {
     }
   }
 
-  private def initialDirection(startRow: Int, startCol: Int, map: Array[Array[Char]]): Either[String, (Int, Int)] = {
+  def initialDirection(startRow: Int, startCol: Int, map: Array[Array[Char]]): Either[String, (Int, Int)] = {
     val directions = Seq((-1, 0), (1, 0), (0, -1), (0, 1)) // Up, Down, Left, Right
     val validDirections = directions.flatMap { case (dr, dc) =>
       val newRow = startRow + dr
@@ -203,7 +203,7 @@ object Main {
     }
   }
 
-  private def determineNewDirection(
+  def determineNewDirection(
     map: Array[Array[Char]],
     visited: Array[Array[(Boolean, String)]],
     row: Int,
@@ -231,7 +231,7 @@ object Main {
       .getOrElse(currentDirection)
   }
 
-  private def isValidDirection(
+  def isValidDirection(
     map: Array[Array[Char]],
     newRow: Int,
     newCol: Int,
@@ -245,7 +245,7 @@ object Main {
     })
   }
 
-  private def isUnvisited(
+  def isUnvisited(
     newRow: Int,
     newCol: Int,
     visited: Array[Array[(Boolean, String)]]

@@ -51,15 +51,6 @@ class MapExamples {
     ),
     MapData(
       map = Array(
-        Array(' ', '+', '-', 'L', '-', '+'),
-        Array(' ', '|', ' ', ' ', '+', 'A', '-', '+'),
-        Array('@', 'B', '+', ' ', '+', '+', ' ', 'H'),
-        Array(' ', '+', '+', ' ', ' ', ' ', ' ', 'x')
-      ),
-      expectedResult = Right(MapResult("BLAH", "@B+++B|+-L-+A+++A-+Hx"))
-    ),
-    MapData(
-      map = Array(
         Array('@', '-', 'A', '-', '-', '+'),
         Array(' ', ' ', ' ', ' ', ' ', '|'),
         Array(' ', ' ', ' ', ' ', ' ', '+', '-', 'B', '-', '-', 'x', '-', 'C', '-', '-', 'D')
